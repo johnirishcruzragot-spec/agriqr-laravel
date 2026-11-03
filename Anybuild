@@ -1,4 +1,4 @@
-﻿load("//anybuild/tools:laravel.bzl", "laravel_build", "laravel_config", "laravel_serve")
+load("//anybuild/tools:laravel.bzl", "laravel_build", "laravel_config", "laravel_serve")
 
 config = laravel_config(
     schema = 1,

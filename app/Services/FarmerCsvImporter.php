@@ -19,8 +19,13 @@ class FarmerCsvImporter
 {
     public const HEADERS = [
         'DATE ENCODED',
+        'REGISTRATION DATE',
         'LGU RSBSA Number',
         'FFRS System Generated No.',
+        'FARM SIZE',
+        'FARM SIZE UNIT',
+        'CROP INFORMATION',
+        'REMARKS',
         'LAST NAME',
         'FIRST NAME',
         'MIDDLE NAME',
@@ -54,8 +59,16 @@ class FarmerCsvImporter
 
     private const HEADER_FIELDS = [
         'date encoded' => 'date_encoded',
+        'registration date' => 'registration_date',
+        'date of registration' => 'registration_date',
         'lgu rsbsa number' => 'rsbsa_number',
         'ffrs system generated no' => 'ffrs_generated_number',
+        'farm size' => 'farm_size',
+        'farm size ha' => 'farm_size',
+        'farm size hectares' => 'farm_size',
+        'farm size unit' => 'farm_size_unit',
+        'crop information' => 'crop_information',
+        'remarks' => 'remarks',
         'last name' => 'last_name',
         'first name' => 'first_name',
         'middle name' => 'middle_name',
@@ -87,7 +100,7 @@ class FarmerCsvImporter
         'owner name' => 'owner_name',
     ];
 
-    private const DATE_FIELDS = ['date_encoded', 'birthdate'];
+    private const DATE_FIELDS = ['date_encoded', 'registration_date', 'birthdate'];
 
     private const BOOLEAN_FIELDS = [
         'is_farmer',
@@ -336,6 +349,11 @@ class FarmerCsvImporter
             'last_name' => ['required', 'string', 'max:100'],
             'suffix' => ['nullable', 'string', 'max:20'],
             'ffrs_generated_number' => ['nullable', 'string', 'max:100'],
+            'farm_size' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'farm_size_unit' => ['nullable', 'string', 'max:20'],
+            'crop_information' => ['nullable', 'string', 'max:5000'],
+            'registration_date' => ['nullable', 'date'],
+            'remarks' => ['nullable', 'string', 'max:5000'],
             'gender' => ['nullable', 'string', 'max:30'],
             'tribe' => ['nullable', 'string', 'max:150'],
             'farmer_address_1' => ['nullable', 'string', 'max:255'],
@@ -442,6 +460,11 @@ class FarmerCsvImporter
     {
         return Arr::only($data, [
             'rsbsa_number',
+            'registration_date',
+            'farm_size',
+            'farm_size_unit',
+            'crop_information',
+            'remarks',
             'date_encoded',
             'ffrs_generated_number',
             'gender',

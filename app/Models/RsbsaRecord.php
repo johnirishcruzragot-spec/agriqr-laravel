@@ -37,6 +37,7 @@ class RsbsaRecord extends Model
     protected function casts(): array
     {
         return [
+            'farm_size' => 'decimal:2',
             'registration_date' => 'date',
             'date_encoded' => 'date',
             'birthdate' => 'date',

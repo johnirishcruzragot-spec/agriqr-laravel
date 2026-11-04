@@ -29,6 +29,8 @@ class FarmerCsvImportTest extends TestCase
         $template->assertDownload('agriqr-rsbsa-template.csv');
         $this->assertStringStartsWith("\xEF\xBB\xBF", $template->streamedContent());
         $this->assertStringContainsString('FFRS System Generated No.', $template->streamedContent());
+        $this->assertStringContainsString('REGISTRATION DATE', $template->streamedContent());
+        $this->assertStringContainsString('FARM SIZE UNIT', $template->streamedContent());
     }
 
     public function test_csv_import_creates_farmer_and_multiple_parcels_from_bom_file(): void
@@ -37,8 +39,13 @@ class FarmerCsvImportTest extends TestCase
         $file = $this->csvFile([
             [
                 'DATE ENCODED' => '2026-02-01',
+                'REGISTRATION DATE' => '2026-01-15',
                 'LGU RSBSA Number' => 'RSBSA-CSV-100',
                 'FFRS System Generated No.' => 'FFRS-100',
+                'FARM SIZE' => '5.75',
+                'FARM SIZE UNIT' => 'hectare',
+                'CROP INFORMATION' => 'Rice and corn',
+                'REMARKS' => 'Farm record note',
                 'LAST NAME' => 'Reyes',
                 'FIRST NAME' => 'Maya',
                 'MIDDLE NAME' => 'Santos',
@@ -95,6 +102,11 @@ class FarmerCsvImportTest extends TestCase
         $this->assertSame('Maya Santos Reyes', $farmer->full_name);
         $this->assertSame('San Roque, Baliuag, Bulacan', $farmer->address);
         $this->assertSame('2026-02-01', $farmer->rsbsaRecord->date_encoded->toDateString());
+        $this->assertSame('2026-01-15', $farmer->rsbsaRecord->registration_date->toDateString());
+        $this->assertSame('5.75', $farmer->rsbsaRecord->farm_size);
+        $this->assertSame('hectare', $farmer->rsbsaRecord->farm_size_unit);
+        $this->assertSame('Rice and corn', $farmer->rsbsaRecord->crop_information);
+        $this->assertSame('Farm record note', $farmer->rsbsaRecord->remarks);
         $this->assertSame('1987-04-15', $farmer->rsbsaRecord->birthdate->toDateString());
         $this->assertTrue($farmer->rsbsaRecord->is_farmer);
         $this->assertFalse($farmer->rsbsaRecord->is_farmworker);
@@ -108,6 +120,19 @@ class FarmerCsvImportTest extends TestCase
         ]);
         $this->assertDatabaseCount('audit_logs', 2);
         $this->assertSame(2, AuditLog::where('module', 'FARMER')->where('user_id', $user->id)->count());
+
+        $this->actingAs($user)
+            ->get(route('farmers.show', $farmer))
+            ->assertOk()
+            ->assertSee('Farm registration details')
+            ->assertSee('5.75')
+            ->assertSee('Registered Jan 15, 2026')
+            ->assertSee('Rice and corn')
+            ->assertSee('Farm record note');
+
+        $this->get(route('farmers.index'))
+            ->assertOk()
+            ->assertSee('San Roque, Baliuag, Bulacan');
     }
 
     public function test_csv_import_updates_existing_rsbsa_record_without_overwriting_blank_fields_or_qr_id(): void

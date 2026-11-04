@@ -107,6 +107,22 @@
             </section>
 
             <section class="panel rsbsa-section section-gap">
+                <div class="panel-heading"><div><h2>Farm registration details</h2><p>Farm size and additional information from the RSBSA record</p></div></div>
+                <div class="detail-grid">
+                    <div><span class="detail-label">FARM SIZE</span><strong>{{ $rsbsa?->farm_size !== null ? number_format((float) $rsbsa->farm_size, 2) : 'Not provided' }}</strong></div>
+                    <div><span class="detail-label">FARM SIZE UNIT</span><strong>{{ $rsbsa?->farm_size_unit ? str($rsbsa->farm_size_unit)->title() : 'Not provided' }}</strong></div>
+                </div>
+                <div class="rsbsa-subsection">
+                    <span class="detail-label">CROP INFORMATION</span>
+                    <p>{{ $rsbsa?->crop_information ?: 'Not provided' }}</p>
+                </div>
+                <div class="rsbsa-subsection">
+                    <span class="detail-label">REMARKS</span>
+                    <p>{{ $rsbsa?->remarks ?: 'Not provided' }}</p>
+                </div>
+            </section>
+
+            <section class="panel rsbsa-section section-gap">
                 <div class="panel-heading"><div><h2>Farm parcels and commodities</h2><p>Parcel, crop and ownership information from RSBSA</p></div><span class="table-count">{{ $farmer->parcels->count() }} parcels</span></div>
                 @if ($farmer->parcels->isEmpty())
                     <div class="empty-state compact"><strong>No parcel information</strong><p>Parcel details will appear here after a CSV import.</p></div>

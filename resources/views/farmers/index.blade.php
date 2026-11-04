@@ -32,9 +32,19 @@
                     <thead><tr><th>FARMER</th><th>LOCATION</th><th>RSBSA</th><th>REGISTERED</th><th>STATUS</th><th></th></tr></thead>
                     <tbody>
                         @foreach ($farmers as $farmer)
+                            @php
+                                $location = collect([
+                                    $farmer->rsbsaRecord?->farmer_address_1,
+                                    $farmer->rsbsaRecord?->farmer_address_2,
+                                    $farmer->rsbsaRecord?->farmer_address_3,
+                                ])->filter()->implode(', ') ?: collect([
+                                    $farmer->barangay,
+                                    $farmer->municipality,
+                                ])->filter()->implode(', ');
+                            @endphp
                             <tr>
                                 <td><div class="person-cell"><span class="person-avatar">{{ strtoupper(substr($farmer->first_name, 0, 1).substr($farmer->last_name, 0, 1)) }}</span><div><a class="table-primary" href="{{ route('farmers.show', $farmer) }}">{{ $farmer->full_name }}</a><small class="table-sub">{{ $farmer->farmer_id }}</small></div></div></td>
-                                <td>{{ collect([$farmer->barangay, $farmer->municipality])->filter()->implode(', ') ?: '—' }}</td>
+                                <td>{{ $location ?: '—' }}</td>
                                 <td>@if ($farmer->rsbsaRecord?->verification_status === 'verified')<span class="status status-green">Verified</span>@elseif ($farmer->rsbsaRecord)<span class="status status-amber">{{ str($farmer->rsbsaRecord->verification_status)->title() }}</span>@else<span class="status status-neutral">Not registered</span>@endif</td>
                                 <td>{{ $farmer->created_at->format('M j, Y') }}</td>
                                 <td><span class="status {{ $farmer->status === 'active' ? 'status-green' : 'status-neutral' }}">{{ str($farmer->status)->title() }}</span></td>

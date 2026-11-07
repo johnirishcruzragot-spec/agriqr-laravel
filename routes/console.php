@@ -14,7 +14,7 @@ Artisan::command('inspire', function () {
 
 Artisan::command('agriqr:create-admin', function () {
     if (User::query()->exists()) {
-        $this->error('An account already exists. Sign in with an administrator account to add team members.');
+        $this->error('An account already exists. Sign in with the System Admin account to add team members.');
 
         return Command::FAILURE;
     }
@@ -52,11 +52,11 @@ Artisan::command('agriqr:create-admin', function () {
         'email' => $email,
         'username' => $username,
         'password' => Hash::make($password),
-        'role' => 'super_admin',
+        'role' => 'system_admin',
         'is_active' => true,
     ]);
 
-    $this->info('Administrator account created. Sign in at /login.');
+    $this->info('System Admin account created. Sign in at /login.');
 
     return Command::SUCCESS;
 })->purpose('Create the first AgriQR administrator account');

@@ -14,6 +14,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create the first administrator with `php artisan agriqr:create-admin`.
+        // Create the first Super Admin with `php artisan agriqr:create-admin`.
     }
 }

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" fill="none">
+    <defs>
+        <linearGradient id="sky" x1="800" y1="0" x2="800" y2="1000" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#DDF3FF"/>
+            <stop offset=".54" stop-color="#F8FCF6"/>
+            <stop offset="1" stop-color="#D5EAC2"/>
+        </linearGradient>
+        <linearGradient id="field" x1="650" y1="650" x2="900" y2="1080" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#92CD5B"/>
+            <stop offset=".44" stop-color="#2B9B50"/>
+            <stop offset="1" stop-color="#075D37"/>
+        </linearGradient>
+        <linearGradient id="gold" x1="600" y1="700" x2="1000" y2="1050" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#FFE889"/>
+            <stop offset=".5" stop-color="#F5C22E"/>
+            <stop offset="1" stop-color="#D9910D"/>
+        </linearGradient>
+        <radialGradient id="sunGlow" cx="0" cy="0" r="1" gradientTransform="matrix(650 0 0 400 1180 80)" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#fff" stop-opacity=".85"/>
+            <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+    </defs>
+    <path fill="url(#sky)" d="M0 0h1600v1000H0z"/>
+    <path fill="url(#sunGlow)" d="M0 0h1600v1000H0z"/>
+    <path fill="#fff" fill-opacity=".72" d="M0 390c170-55 230-35 380 5 142 38 210 14 330-14 145-35 218 31 353 22 161-10 242-104 537-18v300H0V390Z"/>
+    <path fill="#C5E6A2" d="M0 600c180-78 298-80 477-25 151 47 240-5 371-52 155-55 251 2 379 13 127 11 220-52 373-40v300H0V600Z"/>
+    <path fill="#8CCB62" d="M0 690c178-90 323-90 493-45 169 44 259 4 390-43 174-62 275-7 402 18 115 23 207-23 315-5v385H0V690Z"/>
+    <path fill="url(#field)" d="M0 770c185-91 343-106 532-52 173 49 267 31 423-20 177-58 303-1 427 33 90 25 153 22 218 11v258H0V770Z"/>
+    <path fill="#0B7040" d="M0 842c209-95 351-98 530-51 167 44 286 43 459-16 171-58 292-6 412 39 73 27 133 35 199 31v155H0V842Z"/>
+    <path stroke="url(#gold)" stroke-width="27" d="M-25 772c218 55 370 87 585 121 254 40 458 52 748 72 135 9 224 14 317 21"/>
+    <path stroke="#E8F7D6" stroke-opacity=".8" stroke-width="5" d="M0 703c173-75 298-80 471-32 157 43 259 12 403-38 170-60 276-13 401 13 121 26 205-21 325-7"/>
+    <path stroke="#D3EAAE" stroke-opacity=".72" stroke-width="4" d="M0 900c218-96 357-101 535-53 169 45 293 40 468-20 169-58 288 1 415 45 73 25 125 32 182 30"/>
+</svg>

@@ -198,10 +198,12 @@ class FarmerCsvImporter
                         continue;
                     }
 
-                    $validator = Validator::make($data, $this->rules(), [
+                    $validator = Validator::make($data, $this->rules($data), [
                         'rsbsa_number.required' => 'LGU RSBSA Number is required.',
                         'first_name.required' => 'FIRST NAME is required.',
                         'last_name.required' => 'LAST NAME is required.',
+                        'farm_size.gt' => 'FARM SIZE must be greater than zero.',
+                        'farm_size.max' => 'FARM SIZE exceeds the maximum for its unit.',
                     ]);
 
                     if ($validator->fails()) {
@@ -340,8 +342,10 @@ class FarmerCsvImporter
     /**
      * @return array<string, array<int, string>>
      */
-    private function rules(): array
+    private function rules(array $data): array
     {
+        $farmSizeMaximum = RsbsaRecord::FARM_SIZE_LIMITS[$data['farm_size_unit'] ?? 'hectare'] ?? RsbsaRecord::FARM_SIZE_LIMITS['hectare'];
+
         return [
             'rsbsa_number' => ['required', 'string', 'max:100'],
             'first_name' => ['required', 'string', 'max:100'],
@@ -349,8 +353,8 @@ class FarmerCsvImporter
             'last_name' => ['required', 'string', 'max:100'],
             'suffix' => ['nullable', 'string', 'max:20'],
             'ffrs_generated_number' => ['nullable', 'string', 'max:100'],
-            'farm_size' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
-            'farm_size_unit' => ['nullable', 'string', 'max:20'],
+            'farm_size' => ['nullable', 'numeric', 'gt:0', "max:{$farmSizeMaximum}"],
+            'farm_size_unit' => ['nullable', 'in:hectare,sqm,acre'],
             'crop_information' => ['nullable', 'string', 'max:5000'],
             'registration_date' => ['nullable', 'date'],
             'remarks' => ['nullable', 'string', 'max:5000'],

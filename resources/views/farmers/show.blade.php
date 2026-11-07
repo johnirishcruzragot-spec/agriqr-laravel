@@ -22,14 +22,16 @@
 
     <div class="page-heading heading-with-action">
         <div>
-            <a class="back-link" href="{{ route('farmers.index') }}">← Farmer directory</a>
+            @if (auth()->user()->canUseButton('farmers.list'))<a class="back-link" href="{{ route('farmers.index') }}">← Farmer directory</a>@endif
             <span class="eyebrow">RSBSA FARMER RECORD · {{ $farmer->farmer_id }}</span>
             <h1>{{ $farmer->full_name }}</h1>
             <p>{{ $address ?: 'Location not provided' }}</p>
         </div>
         <div class="heading-actions no-print">
-            <a class="button button-secondary" href="{{ route('farmers.edit', $farmer) }}">Edit profile</a>
-            <button class="button button-primary" type="button" onclick="window.print()">Print record</button>
+            @if (auth()->user()->canUseButton('farmers.edit'))
+                <a class="button button-secondary" href="{{ route('farmers.edit', $farmer) }}">Edit profile</a>
+            @endif
+            @if (auth()->user()->canUseButton('farmers.print'))<button class="button button-primary" type="button" onclick="window.print()">Print record</button>@endif
         </div>
     </div>
 
@@ -42,15 +44,17 @@
                     {{ strtoupper(substr($farmer->first_name, 0, 1).substr($farmer->last_name, 0, 1)) }}
                 </div>
             @endif
-            <form method="post" action="{{ route('farmers.photo.update', $farmer) }}" enctype="multipart/form-data" class="farmer-photo-form no-print">
-                @csrf
-                <label class="field">
-                    <span>{{ $farmer->photo_path ? 'Replace farmer photo' : 'Add farmer photo' }}</span>
-                    <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required>
-                    <small>JPG, PNG or WebP. Maximum 3 MB.</small>
-                </label>
-                <button class="button button-secondary button-wide" type="submit">Save photo</button>
-            </form>
+            @if (auth()->user()->canUseButton('farmers.edit'))
+                <form method="post" action="{{ route('farmers.photo.update', $farmer) }}" enctype="multipart/form-data" class="farmer-photo-form no-print">
+                    @csrf
+                    <label class="field">
+                        <span>{{ $farmer->photo_path ? 'Replace farmer photo' : 'Add farmer photo' }}</span>
+                        <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required>
+                        <small>JPG, PNG or WebP. Maximum 3 MB.</small>
+                    </label>
+                    <button class="button button-secondary button-wide" type="submit">Save photo</button>
+                </form>
+            @endif
         </div>
         <div class="rsbsa-hero-details">
             <div class="rsbsa-hero-heading">
@@ -59,7 +63,7 @@
                     <h2>{{ $farmer->full_name }}</h2>
                     <p>{{ $address ?: 'Farmer address not provided' }}</p>
                 </div>
-                <span class="status {{ $farmer->status === 'active' ? 'status-green' : 'status-neutral' }}">
+                <span class="status {{ $farmer->status === 'active' ? 'status-green' : ($farmer->status === 'deceased' ? 'status-amber' : 'status-neutral') }}">
                     {{ str($farmer->status)->title() }}
                 </span>
             </div>
@@ -84,6 +88,12 @@
                     <div><span class="detail-label">BIRTHDATE</span><strong>{{ $rsbsa?->birthdate?->format('M j, Y') ?? 'Not provided' }}</strong></div>
                     <div><span class="detail-label">CONTACT NUMBER</span><strong>{{ $farmer->contact_number ?: 'Not provided' }}</strong></div>
                     <div><span class="detail-label">AGRIQR FARMER ID</span><strong>{{ $farmer->farmer_id }}</strong></div>
+                    @if ($farmer->status === 'deceased')
+                        <div><span class="detail-label">DATE DECEASED</span><strong>{{ $farmer->deceased_at?->format('M j, Y') ?? 'Not provided' }}</strong></div>
+                    @endif
+                    @foreach ($customFields as $field)
+                        <div><span class="detail-label">{{ str($field['label'])->upper() }}</span><strong>{{ $farmer->custom_fields[$field['key']] ?? 'Not provided' }}</strong></div>
+                    @endforeach
                 </div>
                 <div class="rsbsa-subsection">
                     <span class="detail-label">FARMER CLASSIFICATION</span>
@@ -94,6 +104,31 @@
                         <div><span>Tribe</span><strong>{{ $rsbsa?->tribe ?: 'Not provided' }}</strong></div>
                     </div>
                 </div>
+            </section>
+
+            <section class="panel rsbsa-section section-gap">
+                <div class="panel-heading"><div><h2>Seasonal Hybrid / Inbred group history</h2><p>Current and previous group assignments are retained for audit and program eligibility.</p></div></div>
+                @if ($farmer->seasonGroupAssignments->isEmpty())
+                    <div class="empty-state compact"><strong>No seasonal group assignments</strong><p>Season and Hybrid/Inbred assignments will appear here when recorded.</p></div>
+                @else
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>SEASON</th><th>GROUP</th><th>ASSIGNED</th><th>ENDED</th><th>ASSIGNED BY</th><th>STATUS</th></tr></thead>
+                            <tbody>
+                                @foreach ($farmer->seasonGroupAssignments as $assignment)
+                                    <tr>
+                                        <td>{{ $assignment->seasonGroup->season->name }}</td>
+                                        <td><span class="status status-green">{{ str($assignment->seasonGroup->seed_type)->title() }}</span></td>
+                                        <td>{{ $assignment->started_at?->format('M j, Y') ?? '—' }}</td>
+                                        <td>{{ $assignment->ended_at?->format('M j, Y') ?? '—' }}</td>
+                                        <td>{{ $assignment->assigner?->name ?? 'System / unavailable' }}</td>
+                                        <td><span class="status {{ $assignment->ended_at ? 'status-neutral' : 'status-green' }}">{{ $assignment->ended_at ? 'Previous' : 'Current' }}</span></td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
             </section>
 
             <section class="panel rsbsa-section section-gap">
@@ -156,7 +191,8 @@
                 @endif
             </section>
 
-            <section class="panel rsbsa-section section-gap">
+            @if (auth()->user()->canAccessModule('distributions'))
+                <section class="panel rsbsa-section section-gap">
                 <div class="panel-heading"><div><h2>Distribution history</h2><p>Assistance recorded for this farmer</p></div><span class="table-count">{{ $farmer->distributions->count() }} records</span></div>
                 @if ($farmer->distributions->isEmpty())
                     <div class="empty-state compact"><strong>No distribution history</strong><p>Recorded assistance will appear here.</p></div>
@@ -167,7 +203,7 @@
                             <tbody>
                                 @foreach ($farmer->distributions as $distribution)
                                     <tr>
-                                        <td><a class="table-primary" href="{{ route('distributions.show', $distribution) }}">{{ $distribution->transaction_number }}</a></td>
+                                        <td>@if (auth()->user()->canUseButton('distributions.view'))<a class="table-primary" href="{{ route('distributions.show', $distribution) }}">{{ $distribution->transaction_number }}</a>@else<strong>{{ $distribution->transaction_number }}</strong>@endif</td>
                                         <td>{{ $distribution->program?->program_name ?? '—' }}</td>
                                         <td>{{ $distribution->items->map(fn ($item) => $item->supply->supply_name.' × '.number_format((float) $item->quantity, 2))->join(', ') }}</td>
                                         <td>{{ $distribution->distributed_at->format('M j, Y') }}</td>
@@ -178,7 +214,8 @@
                         </table>
                     </div>
                 @endif
-            </section>
+                </section>
+            @endif
         </div>
 
         <aside class="rsbsa-side-column">
@@ -188,7 +225,7 @@
                 <p>This QR code contains the farmer's unique AgriQR ID.</p>
                 <div class="qr-code-box"><canvas data-qr-value="{{ $farmer->farmer_id }}" aria-label="QR code for {{ $farmer->full_name }}"></canvas></div>
                 <strong class="qr-farmer-code">{{ $farmer->farmer_id }}</strong>
-                <button class="button button-secondary button-wide no-print" type="button" onclick="window.print()">Print farmer card</button>
+                @if (auth()->user()->canUseButton('farmers.print'))<button class="button button-secondary button-wide no-print" type="button" onclick="window.print()">Print farmer card</button>@endif
             </section>
 
             <section class="panel rsbsa-status-card">

@@ -34,6 +34,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class RsbsaRecord extends Model
 {
+    public const FARM_SIZE_LIMITS = [
+        'hectare' => 1000,
+        'sqm' => 10000000,
+        'acre' => 2500,
+    ];
+
     protected function casts(): array
     {
         return [

@@ -12,8 +12,10 @@
     <section class="panel">
         <form class="toolbar" method="get" action="{{ route('activity.index') }}">
             <label class="field"><span>Filter by module</span><select class="select-control" name="module"><option value="">All activity</option>@foreach ($modules as $option)<option value="{{ $option }}" @selected($module === $option)>{{ str($option)->title() }}</option>@endforeach</select></label>
-            <button class="button button-secondary" type="submit">Apply filter</button>
-            @if ($module)<a class="text-link" href="{{ route('activity.index') }}">Clear</a>@endif
+            @if (auth()->user()->canUseButton('activity.filter'))
+                <button class="button button-secondary" type="submit">Apply filter</button>
+                @if ($module)<a class="text-link" href="{{ route('activity.index') }}">Clear</a>@endif
+            @endif
             <span class="toolbar-spacer"></span><span class="table-count">{{ $activities->total() }} events</span>
         </form>
         @if ($activities->isEmpty())

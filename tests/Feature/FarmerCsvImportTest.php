@@ -25,6 +25,10 @@ class FarmerCsvImportTest extends TestCase
             ->assertSee('Import farmers from CSV')
             ->assertSee('LGU RSBSA Number');
 
+        $this->get(route('farmers.index'))
+            ->assertOk()
+            ->assertSee('Import CSV');
+
         $template = $this->get(route('farmers.import.template'));
         $template->assertDownload('agriqr-rsbsa-template.csv');
         $this->assertStringStartsWith("\xEF\xBB\xBF", $template->streamedContent());
@@ -137,7 +141,7 @@ class FarmerCsvImportTest extends TestCase
 
     public function test_csv_import_updates_existing_rsbsa_record_without_overwriting_blank_fields_or_qr_id(): void
     {
-        $user = User::factory()->create(['role' => 'staff']);
+        $user = User::factory()->create(['role' => 'admin']);
         $farmer = Farmer::factory()->create([
             'farmer_id' => 'FSTABLE0001',
             'first_name' => 'Old',
@@ -228,6 +232,30 @@ class FarmerCsvImportTest extends TestCase
         $this->assertDatabaseMissing('rsbsa_records', ['rsbsa_number' => 'RSBSA-CSV-BAD']);
     }
 
+    public function test_csv_import_rejects_farm_sizes_above_the_selected_unit_limit(): void
+    {
+        $user = User::factory()->create(['role' => 'admin']);
+        $file = $this->csvFile([
+            [
+                'LGU RSBSA Number' => 'RSBSA-CSV-OVERSIZE',
+                'FIRST NAME' => 'Large',
+                'LAST NAME' => 'Farm',
+                'FARM SIZE' => '1000.01',
+                'FARM SIZE UNIT' => 'hectare',
+            ],
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('farmers.import.store'), ['file' => $file])
+            ->assertRedirect(route('farmers.import'))
+            ->assertSessionHas('farmerImportReport.failed', 1)
+            ->assertSessionHas('farmerImportReport.errors', [
+                'Row 2: FARM SIZE exceeds the maximum for its unit.',
+            ]);
+
+        $this->assertDatabaseCount('farmers', 0);
+    }
+
     public function test_csv_import_rejects_files_without_required_headers(): void
     {
         $user = User::factory()->create(['role' => 'admin']);
@@ -247,6 +275,20 @@ class FarmerCsvImportTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => 'custodian']))
             ->get(route('farmers.import'))
             ->assertForbidden();
+    }
+
+    public function test_technicians_do_not_see_or_access_farmer_csv_import(): void
+    {
+        $technician = User::factory()->create(['role' => 'technician']);
+
+        $this->actingAs($technician)
+            ->get(route('farmers.index'))
+            ->assertOk()
+            ->assertDontSee('Import CSV');
+
+        $this->get(route('farmers.import'))->assertForbidden();
+        $this->get(route('farmers.import.template'))->assertForbidden();
+        $this->post(route('farmers.import.store'))->assertForbidden();
     }
 
     /**

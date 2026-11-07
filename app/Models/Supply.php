@@ -19,6 +19,28 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 ])]
 class Supply extends Model
 {
+    public const CATEGORIES = [
+        'Seeds',
+        'Fertilizers',
+        'Pesticides',
+        'Farm Equipment',
+        'Farm Tools',
+        'Irrigation Supplies',
+        'Animal Feeds',
+        'Veterinary Supplies',
+        'Planting Materials',
+        'Protective Equipment',
+        'Post-Harvest Supplies',
+        'Cash',
+        'Other Agricultural Supplies',
+    ];
+
+    public const UNIT_OPTIONAL_CATEGORIES = [
+        'Cash',
+        'Farm Tools',
+        'Other Agricultural Supplies',
+    ];
+
     public function inventory(): HasOne
     {
         return $this->hasOne(Inventory::class);
@@ -32,7 +54,7 @@ class Supply extends Model
     public function subsidyPrograms(): BelongsToMany
     {
         return $this->belongsToMany(SubsidyProgram::class, 'subsidy_items')
-            ->withPivot('maximum_quantity')
+            ->withPivot('maximum_quantity', 'unit_value')
             ->withTimestamps();
     }
 }

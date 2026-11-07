@@ -42,7 +42,7 @@ class FarmerProfileTest extends TestCase
             'parcel_area' => 2.5,
             'owner_name' => 'Maya Reyes',
         ]);
-        $user = User::factory()->create(['role' => 'staff']);
+        $user = User::factory()->create(['role' => 'technician']);
 
         $this->actingAs($user)
             ->get(route('farmers.show', $farmer))
@@ -62,7 +62,7 @@ class FarmerProfileTest extends TestCase
     public function test_profile_shows_safe_placeholders_when_rsbsa_details_and_photo_are_missing(): void
     {
         $farmer = Farmer::factory()->create();
-        $user = User::factory()->create(['role' => 'staff']);
+        $user = User::factory()->create(['role' => 'technician']);
 
         $this->actingAs($user)
             ->get(route('farmers.show', $farmer))
@@ -136,7 +136,7 @@ class FarmerProfileTest extends TestCase
             'parcel_number' => 'P-<script>',
             'commodity_name' => '<img src=x onerror=alert(1)>',
         ]);
-        $user = User::factory()->create(['role' => 'staff']);
+        $user = User::factory()->create(['role' => 'technician']);
 
         $response = $this->actingAs($user)->get(route('farmers.show', $farmer));
 

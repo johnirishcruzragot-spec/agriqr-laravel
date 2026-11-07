@@ -5,7 +5,7 @@
 
 @section('content')
     <div class="page-heading">
-        <a class="back-link" href="{{ route('farmers.index') }}">← Back to farmer directory</a>
+        @if (auth()->user()->canUseButton('farmers.list'))<a class="back-link" href="{{ route('farmers.index') }}">← Back to farmer directory</a>@endif
         <span class="eyebrow">RSBSA DATA IMPORT</span>
         <h1>Import farmers from CSV</h1>
         <p>Upload an RSBSA spreadsheet saved as a comma-separated CSV file.</p>
@@ -14,7 +14,7 @@
     <section class="panel import-panel">
         <div class="panel-heading">
             <div><h2>Upload a CSV file</h2><p>Files may contain up to 5,000 rows and must be 5 MB or smaller.</p></div>
-            <a class="button button-secondary" href="{{ route('farmers.import.template') }}">Download CSV template</a>
+            @if (auth()->user()->canUseButton('farmers.import'))<a class="button button-secondary" href="{{ route('farmers.import.template') }}">Download CSV template</a>@endif
         </div>
         <div class="import-notice">
             <strong>How matching works</strong>
@@ -27,7 +27,7 @@
                 <input type="file" name="file" accept=".csv,text/csv" required>
                 <small>Use the downloaded template or the spreadsheet headers listed below.</small>
             </label>
-            <button class="button button-primary" type="submit">Import farmers</button>
+            @if (auth()->user()->canUseButton('farmers.import'))<button class="button button-primary" type="submit">Import farmers</button>@endif
         </form>
         <div class="import-headers">
             <span class="detail-label">SUPPORTED COLUMN HEADERS</span>

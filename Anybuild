@@ -17,7 +17,7 @@ laravel_serve(
     config,
     build,
     name = "agriqr-laravel",
-    commands = {
+    extra_commands = {
         "after_deploy": "php artisan migrate --force",
     },
 )

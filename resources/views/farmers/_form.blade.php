@@ -70,7 +70,31 @@
         <div class="form-grid">
             <label class="field"><span>RSBSA number</span><input name="rsbsa_number" value="{{ old('rsbsa_number', $farmer->rsbsaRecord?->rsbsa_number) }}" maxlength="100" placeholder="Leave blank if not registered"></label>
             <label class="field"><span>Registration status</span><select name="registration_status">@foreach (['registered', 'pending', 'unregistered'] as $value)<option value="{{ $value }}" @selected(old('registration_status', $farmer->rsbsaRecord?->registration_status ?? 'registered') === $value)>{{ str($value)->title() }}</option>@endforeach</select></label>
-            <label class="field"><span>Verification status</span><select name="verification_status">@foreach (auth()->user()->role === 'admin' ? ['unverified', 'pending', 'verified'] : ['unverified', 'pending'] as $value)<option value="{{ $value }}" @selected(old('verification_status', $farmer->rsbsaRecord?->verification_status ?? 'unverified') === $value)>{{ str($value)->title() }}</option>@endforeach</select></label>
+            
+<label class="field">
+    <span>Verification status</span>
+    <select name="verification_status">
+        @foreach (
+            auth()->user()->hasAnyRole('admin')
+                ? ['unverified', 'pending', 'verified']
+                : ['unverified', 'pending']
+            as $value
+        )
+            <option
+                value="{{ $value }}"
+                @selected(
+                    old(
+                        'verification_status',
+                        $farmer->rsbsaRecord?->verification_status ?? 'unverified'
+                    ) === $value
+                )
+            >
+                {{ str($value)->title() }}
+            </option>
+        @endforeach
+    </select>
+</label>
+
             <label class="field"><span>Registration date</span><input type="date" name="registration_date" value="{{ old('registration_date', $farmer->rsbsaRecord?->registration_date?->format('Y-m-d')) }}"></label>
             @php($farmSizeUnit = old('farm_size_unit', $farmer->rsbsaRecord?->farm_size_unit ?? 'hectare'))
             <label class="field"><span>Farm size</span><div class="input-with-suffix"><input type="number" step="0.01" min="0.01" max="{{ \App\Models\RsbsaRecord::FARM_SIZE_LIMITS[$farmSizeUnit] ?? \App\Models\RsbsaRecord::FARM_SIZE_LIMITS['hectare'] }}" name="farm_size" data-farm-size value="{{ old('farm_size', $farmer->rsbsaRecord?->farm_size ?? $farmer->farmInfo?->farm_size_hectares) }}"><select name="farm_size_unit" data-farm-size-unit><option value="hectare" data-maximum="{{ \App\Models\RsbsaRecord::FARM_SIZE_LIMITS['hectare'] }}" @selected($farmSizeUnit === 'hectare')>hectares</option><option value="sqm" data-maximum="{{ \App\Models\RsbsaRecord::FARM_SIZE_LIMITS['sqm'] }}" @selected($farmSizeUnit === 'sqm')>sqm</option><option value="acre" data-maximum="{{ \App\Models\RsbsaRecord::FARM_SIZE_LIMITS['acre'] }}" @selected($farmSizeUnit === 'acre')>acres</option></select></div><small>Must be greater than zero; maximum 1,000 ha, 10,000,000 sqm, or 2,500 acres.</small></label>

@@ -32,12 +32,14 @@
                 </a>
                 @endif
 
-                @if ((auth()->user()->canAccessModule('farmers') && auth()->user()->canUseButton('farmers.list')) || (auth()->user()->canAccessModule('distributions') && auth()->user()->canUseButton('distributions.list')) || (auth()->user()->canAccessModule('inventory') && auth()->user()->canUseButton('inventory.list')))
+                @if ((auth()->user()->canAccessModule('farmers') && (auth()->user()->canUseButton('farmers.list') || auth()->user()->canUseButton('farmers.import'))) || (auth()->user()->canAccessModule('distributions') && auth()->user()->canUseButton('distributions.list')) || (auth()->user()->canAccessModule('inventory') && auth()->user()->canUseButton('inventory.list')))
                     <details class="nav-group" @if (request()->routeIs('farmers.*', 'distributions.*', 'supplies.*')) open @endif>
                         <summary class="nav-group-summary"><span>Field operations</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></summary>
                         <div class="nav-group-links">
                             @if (auth()->user()->canAccessModule('farmers') && auth()->user()->canUseButton('farmers.list'))
                                 <a class="nav-link {{ request()->routeIs('farmers.*') ? 'active' : '' }}" href="{{ route('farmers.index') }}"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="7" r="3.5"/><path d="M2.5 20c.5-4 2.8-6 6.5-6s6 2 6.5 6M16 5.5a3.5 3.5 0 0 1 0 6.8M18 14c2.2.9 3.3 2.8 3.5 6"/></svg><span>Farmers</span></a>
+                            @elseif (auth()->user()->canAccessModule('farmers') && auth()->user()->canUseButton('farmers.import'))
+                                <a class="nav-link {{ request()->routeIs('farmers.import*') ? 'active' : '' }}" href="{{ route('farmers.import') }}"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V3m0 0L7 8m5-5 5 5M4 15v5h16v-5"/></svg><span>Import farmers</span></a>
                             @endif
                             @if (auth()->user()->canAccessModule('distributions') && auth()->user()->canUseButton('distributions.list'))
                                 <a class="nav-link {{ request()->routeIs('distributions.*') ? 'active' : '' }}" href="{{ route('distributions.index') }}"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 3.5h16v17H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>Distributions</span></a>

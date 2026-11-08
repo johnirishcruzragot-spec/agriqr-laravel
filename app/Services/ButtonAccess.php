@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\SystemSetting;
 use App\Models\User;
+use App\Models\UserButtonPermission;
 
 class ButtonAccess
 {
@@ -61,6 +62,9 @@ class ButtonAccess
     /** @var array<string, array<string, bool>>|null */
     private ?array $configured = null;
 
+    /** @var array<int, array<string, bool>> */
+    private array $userOverrides = [];
+
     /**
      * @return array<string, array{section: string, label: string, module: string|null, routes: list<string>, defaults: array<string, bool>, server_protected?: bool}>
      */
@@ -97,8 +101,55 @@ class ButtonAccess
             return false;
         }
 
+        $overrides = $this->userOverrides($user);
+
+        if (array_key_exists($action, $overrides)) {
+            return $overrides[$action];
+        }
+
         return $this->configured()[$user->role][$action]
             ?? $definition['defaults'][$user->role];
+    }
+
+    /**
+     * Actions that can be customized for one account. Workspace navigation and sign-out
+     * remain inherited so a restricted user can still enter and safely leave the app.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function userConfigurableActions(User $user): array
+    {
+        return array_filter(
+            self::ACTIONS,
+            fn (array $definition): bool => $definition['section'] !== 'Workspace'
+                && array_key_exists($user->role, $definition['defaults']),
+        );
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    public function valuesForUserForm(User $user): array
+    {
+        $values = [];
+        $overrides = $this->userOverrides($user);
+
+        foreach (self::ACTIONS as $key => $definition) {
+            if (! array_key_exists($user->role, $definition['defaults'])) {
+                continue;
+            }
+
+            $values[$key] = $overrides[$key]
+                ?? $this->configured()[$user->role][$key]
+                ?? $definition['defaults'][$user->role];
+        }
+
+        return $values;
+    }
+
+    public function userHasOverrides(User $user): bool
+    {
+        return $this->userOverrides($user) !== [];
     }
 
     /**
@@ -128,6 +179,44 @@ class ButtonAccess
         );
 
         $this->configured = $values;
+    }
+
+    /**
+     * @param  array<string, bool>  $values
+     */
+    public function saveForUser(User $user, array $values): void
+    {
+        foreach ($this->userConfigurableActions($user) as $key => $definition) {
+            UserButtonPermission::query()->updateOrCreate(
+                ['user_id' => $user->id, 'button_key' => $key],
+                ['is_allowed' => (bool) ($values[$key] ?? false)],
+            );
+        }
+
+        unset($this->userOverrides[$user->id]);
+        $user->unsetRelation('buttonPermissions');
+    }
+
+    public function resetForUser(User $user): void
+    {
+        UserButtonPermission::query()->where('user_id', $user->id)->delete();
+        unset($this->userOverrides[$user->id]);
+        $user->unsetRelation('buttonPermissions');
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    private function userOverrides(User $user): array
+    {
+        if (! array_key_exists($user->id, $this->userOverrides)) {
+            $user->loadMissing('buttonPermissions');
+            $this->userOverrides[$user->id] = $user->buttonPermissions
+                ->mapWithKeys(fn (UserButtonPermission $permission): array => [
+                    $permission->button_key => (bool) $permission->is_allowed,
+                ])->all();
+        }
+        return $this->userOverrides[$user->id];
     }
 
     /**

@@ -153,6 +153,47 @@ class ButtonAccessTest extends TestCase
             ->assertForbidden();
     }
 
+
+    public function test_system_admin_can_configure_individual_permissions_without_affecting_other_accounts(): void
+    {
+        $systemAdmin = User::factory()->create(['role' => 'system_admin']);
+        $importOnlyTechnician = User::factory()->create(['role' => 'technician']);
+        $fullTechnician = User::factory()->create(['role' => 'technician']);
+        $this->actingAs($systemAdmin)->get(route('button-access.index', ['user_id' => $importOnlyTechnician->id]))->assertOk()->assertSee('Individual user permissions')->assertSee($importOnlyTechnician->name);
+        $this->actingAs($systemAdmin)->put(route('button-access.users.update', $importOnlyTechnician), ['user_buttons' => ['farmers.import']])->assertRedirect(route('button-access.index', ['user_id' => $importOnlyTechnician->id]));
+        $this->assertTrue($importOnlyTechnician->fresh()->canUseButton('farmers.import'));
+        $this->assertFalse($importOnlyTechnician->fresh()->canUseButton('farmers.create'));
+        $this->assertFalse($importOnlyTechnician->fresh()->canUseButton('farmers.list'));
+        $this->assertFalse($fullTechnician->fresh()->canUseButton('farmers.import'));
+        $this->assertTrue($fullTechnician->fresh()->canUseButton('farmers.create'));
+        $this->assertTrue($fullTechnician->fresh()->canUseButton('farmers.list'));
+        $this->actingAs($importOnlyTechnician->fresh())->get(route('dashboard'))->assertOk()->assertSee(route('farmers.import'));
+        $this->actingAs($importOnlyTechnician->fresh())->get(route('farmers.import'))->assertOk();
+        $this->actingAs($importOnlyTechnician->fresh())->get(route('farmers.index'))->assertForbidden();
+        $this->actingAs($importOnlyTechnician->fresh())->get(route('farmers.create'))->assertForbidden();
+        $this->actingAs($fullTechnician->fresh())->get(route('farmers.create'))->assertOk();
+        $this->assertDatabaseHas('user_button_permissions', ['user_id' => $importOnlyTechnician->id, 'button_key' => 'farmers.import', 'is_allowed' => true]);
+        $this->assertDatabaseHas('audit_logs', ['user_id' => $systemAdmin->id, 'record_id' => $importOnlyTechnician->id, 'module' => 'BUTTON_ACCESS']);
+    }
+
+    public function test_system_admin_can_reset_individual_permissions_to_role_defaults(): void
+    {
+        $systemAdmin = User::factory()->create(['role' => 'system_admin']); $technician = User::factory()->create(['role' => 'technician']);
+        $this->actingAs($systemAdmin)->put(route('button-access.users.update', $technician), ['user_buttons' => ['farmers.import']])->assertRedirect();
+        $this->assertTrue($technician->fresh()->canUseButton('farmers.import'));
+        $this->actingAs($systemAdmin)->delete(route('button-access.users.reset', $technician))->assertRedirect(route('button-access.index', ['user_id' => $technician->id]));
+        $this->assertDatabaseMissing('user_button_permissions', ['user_id' => $technician->id]);
+        $this->assertFalse($technician->fresh()->canUseButton('farmers.import'));
+        $this->assertTrue($technician->fresh()->canUseButton('farmers.create'));
+    }
+
+    public function test_only_system_admin_can_change_individual_user_button_permissions(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']); $technician = User::factory()->create(['role' => 'technician']);
+        $this->actingAs($admin)->put(route('button-access.users.update', $technician), ['user_buttons' => ['farmers.import']])->assertForbidden();
+        $this->assertDatabaseMissing('user_button_permissions', ['user_id' => $technician->id]);
+    }
+
     public function test_disabled_custom_field_action_rejects_direct_field_updates(): void
     {
         $systemAdmin = User::factory()->create(['role' => 'system_admin']);

@@ -154,6 +154,8 @@ Route::middleware('auth')->group(function () {
     Route::middleware(['role:system_admin', 'module:settings'])->group(function () {
         Route::get('/system/buttons', [ButtonAccessController::class, 'index'])->name('button-access.index');
         Route::put('/system/buttons', [ButtonAccessController::class, 'update'])->name('button-access.update');
+        Route::put('/system/buttons/users/{managedUser}', [ButtonAccessController::class, 'updateUser'])->whereNumber('managedUser')->name('button-access.users.update');
+        Route::delete('/system/buttons/users/{managedUser}', [ButtonAccessController::class, 'resetUser'])->whereNumber('managedUser')->name('button-access.users.reset');
     });
 
     Route::middleware(['role:admin', 'module:settings'])->group(function () {

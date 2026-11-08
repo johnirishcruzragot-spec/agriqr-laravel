@@ -414,7 +414,7 @@ class SuperAdminConsoleTest extends TestCase
             ->get(route('reports.index', ['report' => 'failed-verifications']))
             ->assertOk()
             ->assertSee('QR lookup did not match a farmer record.')
-            ->assertSee('Face verification is not currently implemented.');
+            ->assertSee('Face verification is not currently implemented in this report.');
     }
 
     public function test_editing_farmer_preserves_values_for_fields_removed_from_configuration(): void

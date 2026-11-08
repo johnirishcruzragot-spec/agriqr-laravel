@@ -134,6 +134,8 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware(['role:admin,technician', 'module:reports', 'button:reports.view'])->group(function () {
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/programs/{program}/distributions', [ReportController::class, 'programDistributions'])
+            ->name('reports.programs.distributions');
     });
 
     Route::middleware(['role:admin', 'module:database', 'button:database.view'])->group(function () {

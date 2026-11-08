@@ -424,8 +424,10 @@ document.querySelectorAll('[data-farm-size-unit]').forEach((unitSelect) => {
     updateMaximum();
 });
 
-function setRegistrationStep(dialog, stepNumber) {
-    const form = dialog.querySelector('[data-registration-wizard]');
+function setRegistrationStep(container, stepNumber) {
+    if (!container) return;
+
+    const form = container.querySelector('[data-registration-wizard]');
     if (!form) return;
 
     form.querySelectorAll('[data-registration-step]').forEach((step) => {
@@ -433,7 +435,7 @@ function setRegistrationStep(dialog, stepNumber) {
     });
 
     const isFirstStep = stepNumber === 1;
-    const status = dialog.querySelector('[data-registration-status]');
+    const status = container.querySelector('[data-registration-status]');
     const nextButton = form.querySelector('[data-registration-next]');
     const backButton = form.querySelector('[data-registration-back]');
     const submitButton = form.querySelector('[data-registration-submit]');
@@ -461,8 +463,8 @@ function isStepValid(step) {
     return true;
 }
 
-document.querySelectorAll('[data-registration-dialog]').forEach((dialog) => {
-    const form = dialog.querySelector('[data-registration-wizard]');
+document.querySelectorAll('[data-registration-wizard-container]').forEach((container) => {
+    const form = container.querySelector('[data-registration-wizard]');
     const firstStep = form?.querySelector('[data-registration-step="1"]');
     const secondStep = form?.querySelector('[data-registration-step="2"]');
     const nextButton = form?.querySelector('[data-registration-next]');
@@ -470,31 +472,34 @@ document.querySelectorAll('[data-registration-dialog]').forEach((dialog) => {
 
     if (!form || !firstStep || !secondStep) return;
 
-    setRegistrationStep(dialog, Number(dialog.dataset.openStep) === 2 ? 2 : 1);
+    const openStep = Number(container.dataset.openStep ?? container.closest('[data-open-step]')?.dataset.openStep);
+    setRegistrationStep(container, openStep === 2 ? 2 : 1);
 
     nextButton?.addEventListener('click', () => {
-        if (isStepValid(firstStep)) setRegistrationStep(dialog, 2);
+        if (isStepValid(firstStep)) setRegistrationStep(container, 2);
     });
 
     backButton?.addEventListener('click', () => {
-        setRegistrationStep(dialog, 1);
+        setRegistrationStep(container, 1);
     });
 
     form.addEventListener('submit', (event) => {
         if (!isStepValid(firstStep)) {
             event.preventDefault();
-            setRegistrationStep(dialog, 1);
+            setRegistrationStep(container, 1);
             return;
         }
 
         if (!isStepValid(secondStep)) {
             event.preventDefault();
-            setRegistrationStep(dialog, 2);
+            setRegistrationStep(container, 2);
         }
     });
+});
 
+document.querySelectorAll('[data-registration-dialog]').forEach((dialog) => {
     dialog.addEventListener('close', () => {
-        setRegistrationStep(dialog, 1);
+        setRegistrationStep(dialog.querySelector('[data-registration-wizard-container]'), 1);
     });
 
     if (dialog.hasAttribute('data-open-on-load')) dialog.showModal();
@@ -504,7 +509,9 @@ document.querySelectorAll('[data-open-dialog]').forEach((button) => {
     button.addEventListener('click', () => {
         const dialog = document.getElementById(button.dataset.openDialog);
         if (dialog instanceof HTMLDialogElement) {
-            if (dialog.hasAttribute('data-registration-dialog')) setRegistrationStep(dialog, 1);
+            if (dialog.hasAttribute('data-registration-dialog')) {
+                setRegistrationStep(dialog.querySelector('[data-registration-wizard-container]'), 1);
+            }
             dialog.showModal();
         }
     });

@@ -18,7 +18,7 @@
         </div>
         <div class="import-notice">
             <strong>How matching works</strong>
-            <p>Rows are matched by LGU RSBSA Number. A new number creates a farmer; an existing number updates that farmer and matching parcel. Blank optional cells leave saved values unchanged. Imported records are marked unverified.</p>
+            <p>Rows are matched by LGU RSBSA Number. A new number creates a farmer; an existing number updates that farmer and matching parcel. Use the RSBSA VERIFICATION column for verified, unverified, or pending. Blank values default new records to unverified and leave existing verification statuses unchanged.</p>
         </div>
         <form method="post" action="{{ route('farmers.import.store') }}" enctype="multipart/form-data" class="import-form">
             @csrf

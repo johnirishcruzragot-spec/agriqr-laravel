@@ -32,6 +32,7 @@ class FarmerCsvImportTest extends TestCase
         $template = $this->get(route('farmers.import.template'));
         $template->assertDownload('agriqr-rsbsa-template.csv');
         $this->assertStringStartsWith("\xEF\xBB\xBF", $template->streamedContent());
+        $this->assertStringContainsString('RSBSA VERIFICATION', $template->streamedContent());
         $this->assertStringContainsString('FFRS System Generated No.', $template->streamedContent());
         $this->assertStringContainsString('REGISTRATION DATE', $template->streamedContent());
         $this->assertStringContainsString('FARM SIZE UNIT', $template->streamedContent());
@@ -137,6 +138,141 @@ class FarmerCsvImportTest extends TestCase
         $this->get(route('farmers.index'))
             ->assertOk()
             ->assertSee('San Roque, Baliuag, Bulacan');
+    }
+
+    public function test_csv_import_saves_each_supported_rsbsa_verification_status(): void
+    {
+        $user = User::factory()->create(['role' => 'admin']);
+        $file = $this->csvFile([
+            [
+                'LGU RSBSA Number' => 'RSBSA-CSV-VERIFIED',
+                'RSBSA VERIFICATION' => 'Verified',
+                'FIRST NAME' => 'Veronica',
+                'LAST NAME' => 'Farmer',
+            ],
+            [
+                'LGU RSBSA Number' => 'RSBSA-CSV-UNVERIFIED',
+                'RSBSA VERIFICATION' => 'UNVERIFIED',
+                'FIRST NAME' => 'Uma',
+                'LAST NAME' => 'Farmer',
+            ],
+            [
+                'LGU RSBSA Number' => 'RSBSA-CSV-PENDING',
+                'RSBSA VERIFICATION' => 'Pending',
+                'FIRST NAME' => 'Penny',
+                'LAST NAME' => 'Farmer',
+            ],
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('farmers.import.store'), ['file' => $file])
+            ->assertRedirect(route('farmers.import'))
+            ->assertSessionHas('farmerImportReport.created', 3)
+            ->assertSessionHas('farmerImportReport.failed', 0);
+
+        $this->assertDatabaseHas('rsbsa_records', [
+            'rsbsa_number' => 'RSBSA-CSV-VERIFIED',
+            'verification_status' => 'verified',
+        ]);
+        $this->assertDatabaseHas('rsbsa_records', [
+            'rsbsa_number' => 'RSBSA-CSV-UNVERIFIED',
+            'verification_status' => 'unverified',
+        ]);
+        $this->assertDatabaseHas('rsbsa_records', [
+            'rsbsa_number' => 'RSBSA-CSV-PENDING',
+            'verification_status' => 'pending',
+        ]);
+    }
+
+    public function test_csv_import_accepts_plural_farm_size_units_from_spreadsheets(): void
+    {
+        $user = User::factory()->create(['role' => 'admin']);
+        $file = $this->csvFile([
+            [
+                'LGU RSBSA Number' => 'RSBSA-CSV-HECTARES',
+                'FIRST NAME' => 'Hector',
+                'LAST NAME' => 'Farmer',
+                'FARM SIZE' => '1',
+                'FARM SIZE UNIT' => 'Hectares',
+            ],
+            [
+                'LGU RSBSA Number' => 'RSBSA-CSV-ACRES',
+                'FIRST NAME' => 'Acre',
+                'LAST NAME' => 'Farmer',
+                'FARM SIZE' => '2',
+                'FARM SIZE UNIT' => 'Acres',
+            ],
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('farmers.import.store'), ['file' => $file])
+            ->assertRedirect(route('farmers.import'))
+            ->assertSessionHas('farmerImportReport.created', 2)
+            ->assertSessionHas('farmerImportReport.failed', 0);
+
+        $this->assertDatabaseHas('rsbsa_records', [
+            'rsbsa_number' => 'RSBSA-CSV-HECTARES',
+            'farm_size_unit' => 'hectare',
+        ]);
+        $this->assertDatabaseHas('rsbsa_records', [
+            'rsbsa_number' => 'RSBSA-CSV-ACRES',
+            'farm_size_unit' => 'acre',
+        ]);
+    }
+
+    public function test_csv_import_updates_existing_rsbsa_verification_status(): void
+    {
+        $user = User::factory()->create(['role' => 'admin']);
+        $farmer = Farmer::factory()->create();
+        $farmer->rsbsaRecord()->create([
+            'rsbsa_number' => 'RSBSA-CSV-STATUS-UPDATE',
+            'registration_status' => 'registered',
+            'verification_status' => 'unverified',
+        ]);
+        $file = $this->csvFile([
+            [
+                'LGU RSBSA Number' => 'RSBSA-CSV-STATUS-UPDATE',
+                'RSBSA VERIFICATION' => 'pending',
+                'FIRST NAME' => $farmer->first_name,
+                'LAST NAME' => $farmer->last_name,
+            ],
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('farmers.import.store'), ['file' => $file])
+            ->assertRedirect(route('farmers.import'))
+            ->assertSessionHas('farmerImportReport.updated', 1)
+            ->assertSessionHas('farmerImportReport.failed', 0);
+
+        $this->assertDatabaseHas('rsbsa_records', [
+            'rsbsa_number' => 'RSBSA-CSV-STATUS-UPDATE',
+            'verification_status' => 'pending',
+        ]);
+    }
+
+    public function test_csv_import_rejects_an_unsupported_rsbsa_verification_status(): void
+    {
+        $user = User::factory()->create(['role' => 'admin']);
+        $file = $this->csvFile([
+            [
+                'LGU RSBSA Number' => 'RSBSA-CSV-INVALID-STATUS',
+                'RSBSA VERIFICATION' => 'approved',
+                'FIRST NAME' => 'Invalid',
+                'LAST NAME' => 'Status',
+            ],
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('farmers.import.store'), ['file' => $file])
+            ->assertRedirect(route('farmers.import'))
+            ->assertSessionHas('farmerImportReport.failed', 1)
+            ->assertSessionHas('farmerImportReport.errors', [
+                'Row 2: RSBSA VERIFICATION must be verified, unverified, or pending.',
+            ]);
+
+        $this->assertDatabaseMissing('rsbsa_records', [
+            'rsbsa_number' => 'RSBSA-CSV-INVALID-STATUS',
+        ]);
     }
 
     public function test_csv_import_updates_existing_rsbsa_record_without_overwriting_blank_fields_or_qr_id(): void

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SubsidyProgram;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
@@ -16,6 +17,7 @@ class ReportController extends Controller
     private const REPORTS = [
         'daily-distributions' => 'Daily distribution summary',
         'monthly-distributions' => 'Monthly distribution summary',
+        'program-distributions' => 'Program distribution summary',
         'farmers' => 'Registered farmers',
         'received' => 'Farmers who received a subsidy',
         'not-received' => 'Farmers who have not received a subsidy',
@@ -78,6 +80,35 @@ class ReportController extends Controller
         ]);
     }
 
+    public function programDistributions(Request $request, SubsidyProgram $program): View
+    {
+        $user = $request->user();
+
+        if (array_intersect(['date_from', 'date_to'], array_keys($request->query->all())) !== []) {
+            abort_unless($user->canUseButton('reports.filter'), 403);
+        }
+
+        $filters = $request->validate([
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+        ]);
+        $distributions = $program->distributions()
+            ->where('transaction_status', 'completed')
+            ->when($filters['date_from'] ?? null, fn ($query, $date) => $query->whereDate('distributed_at', '>=', $date))
+            ->when($filters['date_to'] ?? null, fn ($query, $date) => $query->whereDate('distributed_at', '<=', $date))
+            ->with(['farmer', 'processor', 'season', 'seasonGroup', 'items.supply'])
+            ->orderByDesc('distributed_at')
+            ->orderByDesc('id')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('reports.program-distributions', [
+            'program' => $program,
+            'filters' => $filters,
+            'distributions' => $distributions,
+        ]);
+    }
+
     /**
      * @param  array<string, mixed>  $filters
      * @return array<string, string>
@@ -90,6 +121,17 @@ class ReportController extends Controller
                 'transactions' => 'Transactions',
                 'farmers' => 'Farmers',
                 'quantity' => 'Quantity distributed',
+            ],
+            'program-distributions' => [
+                'program_name' => 'Program name',
+                'subsidy_type' => 'Subsidy type',
+                'program_status' => 'Program status',
+                'transactions' => 'Transactions',
+                'farmers' => 'Farmers reached',
+                'items_issued' => 'Items issued',
+                'quantity' => 'Quantity distributed',
+                'distributed_value' => 'Distributed value (PHP)',
+                'latest_distribution_at' => 'Last distribution',
             ],
             'farmers' => [
                 'farmer_id' => 'Farmer ID',
@@ -183,6 +225,57 @@ class ReportController extends Controller
                 ->selectRaw('farmers.farmer_id, '.$this->farmerNameExpression().' AS name, farmers.barangay, farmers.municipality, rsbsa_records.rsbsa_number, rsbsa_records.verification_status, farmers.status, farmers.created_at')
                 ->orderBy('farmers.last_name')
                 ->orderBy('farmers.first_name');
+        }
+
+        if ($report === 'program-distributions') {
+            return DB::table('distributions')
+                ->leftJoin(
+                    'subsidy_programs',
+                    'subsidy_programs.id',
+                    '=',
+                    'distributions.subsidy_program_id'
+                )
+                ->leftJoin(
+                    'distribution_items',
+                    'distribution_items.distribution_id',
+                    '=',
+                    'distributions.id'
+                )
+                ->where('distributions.transaction_status', 'completed')
+                ->when(
+                    $filters['program_id'] ?? null,
+                    fn ($query, $programId) =>
+                        $query->where('distributions.subsidy_program_id', $programId)
+                )
+                ->when(
+                    $filters['date_from'] ?? null,
+                    fn ($query, $date) =>
+                        $query->whereDate('distributions.distributed_at', '>=', $date)
+                )
+                ->when(
+                    $filters['date_to'] ?? null,
+                    fn ($query, $date) =>
+                        $query->whereDate('distributions.distributed_at', '<=', $date)
+                )
+                ->selectRaw("
+                    distributions.subsidy_program_id AS program_id,
+                    COALESCE(subsidy_programs.program_name, 'Program no longer available') AS program_name,
+                    COALESCE(subsidy_programs.subsidy_type, '—') AS subsidy_type,
+                    COALESCE(subsidy_programs.status, 'Unavailable') AS program_status,
+                    COUNT(DISTINCT distributions.id) AS transactions,
+                    COUNT(DISTINCT distributions.farmer_id) AS farmers,
+                    COUNT(distribution_items.id) AS items_issued,
+                    COALESCE(SUM(distribution_items.quantity), 0) AS quantity,
+                    COALESCE(SUM(distribution_items.line_value), 0) AS distributed_value,
+                    MAX(distributions.distributed_at) AS latest_distribution_at
+                ")
+                ->groupBy(
+                    'distributions.subsidy_program_id',
+                    'subsidy_programs.program_name',
+                    'subsidy_programs.subsidy_type',
+                    'subsidy_programs.status'
+                )
+                ->orderBy('program_name');
         }
 
         if ($report === 'not-received') {

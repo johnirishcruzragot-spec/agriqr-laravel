@@ -9,7 +9,9 @@
     </div>
 @endif
 
-<form method="post" action="{{ $farmer->exists ? route('farmers.update', $farmer) : route('farmers.store') }}" class="form-layout" @if ($isRegistrationDialog) data-registration-wizard novalidate @endif>
+@php($isRegistrationWizard = ! $farmer->exists)
+
+<form method="post" action="{{ $farmer->exists ? route('farmers.update', $farmer) : route('farmers.store') }}" class="form-layout" @if ($isRegistrationWizard) data-registration-wizard novalidate @endif>
     @csrf
     @if ($farmer->exists)
         @method('put')
@@ -27,7 +29,7 @@
         </div>
     @endif
 
-    <section class="panel form-panel" @if ($isRegistrationDialog) data-registration-step="1" @endif>
+    <section class="panel form-panel" @if ($isRegistrationWizard) data-registration-step="1" @endif>
         <div class="form-section-heading"><span class="section-number">01</span><div><h2>Personal information</h2><p>Basic details used to identify and contact the farmer.</p></div></div>
         <div class="form-grid">
             <label class="field"><span>First name <b>*</b></span><input name="first_name" value="{{ old('first_name', $farmer->first_name) }}" maxlength="100" required></label>
@@ -63,7 +65,7 @@
         </div>
     </section>
 
-    <section class="panel form-panel" @if ($isRegistrationDialog) data-registration-step="2" hidden @endif>
+    <section class="panel form-panel" @if ($isRegistrationWizard) data-registration-step="2" hidden @endif>
         <div class="form-section-heading"><span class="section-number">02</span><div><h2>Farm and RSBSA registration</h2><p>Verified RSBSA details are required before a distribution can be recorded.</p></div></div>
         <div class="form-grid">
             <label class="field"><span>RSBSA number</span><input name="rsbsa_number" value="{{ old('rsbsa_number', $farmer->rsbsaRecord?->rsbsa_number) }}" maxlength="100" placeholder="Leave blank if not registered"></label>
@@ -117,21 +119,23 @@
     </section>
 
     <div class="form-actions">
-        @if ($isRegistrationDialog)
-            <button class="button button-secondary" type="button" data-close-dialog>Cancel</button>
+        @if ($isRegistrationWizard)
+            @if ($isRegistrationDialog)
+                <button class="button button-secondary" type="button" data-close-dialog>Cancel</button>
+            @elseif (auth()->user()->canUseButton('farmers.list'))
+                <a class="button button-secondary" href="{{ route('farmers.index') }}">Cancel</a>
+            @endif
             <button class="button button-primary" type="button" data-registration-next>Next</button>
+            <button class="button button-secondary" type="button" data-registration-back hidden>Back</button>
+            @if (auth()->user()->canUseButton('farmers.create'))
+                <button class="button button-primary" type="submit" data-registration-submit hidden>Create farmer profile</button>
+            @endif
         @else
             @if (($farmer->exists && auth()->user()->canUseButton('farmers.view')) || (! $farmer->exists && auth()->user()->canUseButton('farmers.list')))
                 <a class="button button-secondary" href="{{ $farmer->exists ? route('farmers.show', $farmer) : route('farmers.index') }}">Cancel</a>
             @endif
             @if (auth()->user()->canUseButton($farmer->exists ? 'farmers.edit' : 'farmers.create'))
                 <button class="button button-primary" type="submit">{{ $farmer->exists ? 'Save changes' : 'Create farmer profile' }}</button>
-            @endif
-        @endif
-        @if ($isRegistrationDialog)
-            <button class="button button-secondary" type="button" data-registration-back hidden>Back</button>
-            @if (auth()->user()->canUseButton('farmers.create'))
-                <button class="button button-primary" type="submit" data-registration-submit hidden>Create farmer profile</button>
             @endif
         @endif
     </div>

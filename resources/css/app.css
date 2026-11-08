@@ -207,6 +207,18 @@ td strong { color: #39483e; font-weight: 600; }
 .farmer-register-dialog { position: fixed; inset: 50% auto auto 50%; width: min(940px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); margin: 0; transform: translate(-50%, -50%); overflow-y: auto; border: 1px solid var(--line); border-radius: 12px; background: #f7f9f7; padding: 21px; color: var(--ink); box-shadow: 0 18px 55px rgb(19 35 23 / 25%); }
 .farmer-register-dialog::backdrop { background: rgb(18 31 22 / 48%); backdrop-filter: blur(2px); }
 .farmer-register-card { display: grid; gap: 16px; }
+.farmer-action-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.farmer-action-card { display: flex; min-width: 0; min-height: 92px; align-items: center; gap: 13px; border: 1px solid #e3ebe4; border-radius: 10px; background: #fff; padding: 16px; color: var(--ink); text-align: left; transition: border-color .15s, box-shadow .15s, transform .15s; }
+.farmer-action-card:hover { transform: translateY(-1px); border-color: #b9d1bd; box-shadow: var(--shadow); }
+.farmer-action-card:focus-visible { outline: 2px solid #68a67a; outline-offset: 2px; }
+.farmer-action-icon { display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; border-radius: 10px; background: var(--green-soft); color: var(--green); font-size: 21px; font-weight: 600; }
+.farmer-action-copy { display: grid; min-width: 0; flex: 1; gap: 5px; }
+.farmer-action-copy strong { color: #35473a; font-size: 13px; }
+.farmer-action-copy small { color: #78827b; font-size: 10px; line-height: 1.5; }
+.farmer-action-arrow { flex: 0 0 auto; color: #7d9781; font-size: 16px; }
+.farmer-registration-page { max-width: 1100px; padding: 22px; }
+.farmer-registration-page .farmer-step-status { margin: 0 0 16px; }
+.farmer-registration-page .form-layout { margin: 0; }
 .farmer-register-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .farmer-register-heading h2 { margin: 5px 0; color: #263a2d; font-family: Manrope, sans-serif; font-size: 21px; }
 .farmer-register-heading p { margin: 0; color: #7d897f; font-size: 11px; }
@@ -220,6 +232,18 @@ td strong { color: #39483e; font-weight: 600; }
 .report-filters { align-items: end; flex-wrap: wrap; }
 .report-filters > .field { min-width: 135px; }
 .report-filters .select-control { width: 100%; }
+.report-distribution-list { display: grid; gap: 14px; padding: 18px; }
+.report-distribution-card { display: grid; gap: 16px; border: 1px solid #e8eee8; border-radius: 9px; background: #fff; padding: 17px; }
+.report-transaction-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #edf0ed; padding-bottom: 13px; }
+.report-transaction-heading > div { display: grid; gap: 5px; }
+.report-transaction-heading > div strong { color: #34473a; font-size: 13px; }
+.report-transaction-details { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.report-transaction-details > div { display: grid; min-width: 0; align-content: start; gap: 5px; }
+.report-transaction-details strong { overflow-wrap: anywhere; color: #405147; font-size: 11px; }
+.report-transaction-details small { color: #849087; font-size: 10px; }
+.report-issued-items { display: grid; gap: 9px; }
+.report-issued-items p, .report-transaction-remarks p { margin: 0; color: #78827b; font-size: 11px; line-height: 1.5; }
+.report-transaction-remarks { display: grid; gap: 6px; border-top: 1px solid #edf0ed; padding-top: 12px; }
 
 .form-layout { display: grid; gap: 16px; }
 .form-panel { padding: 22px; }
@@ -462,6 +486,7 @@ td strong { color: #39483e; font-weight: 600; }
     .heading-with-action { align-items: flex-start; }
     .heading-with-action > .button { min-width: fit-content; }
     .heading-actions { flex-wrap: wrap; }
+    .farmer-action-grid { grid-template-columns: 1fr; }
     .stats-grid { gap: 9px; }
     .stat-card { min-height: 126px; padding: 13px; }
     .stat-label { font-size: 8px; }
@@ -473,6 +498,7 @@ td strong { color: #39483e; font-weight: 600; }
     .search-field { width: 100%; max-width: none; }
     .toolbar-spacer { display: none; }
     .form-grid { grid-template-columns: 1fr; }
+    .report-transaction-details { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .field-wide { grid-column: auto; }
     .profile-grid { grid-template-columns: 1fr; }
     .qr-panel { order: -1; }
@@ -509,6 +535,7 @@ td strong { color: #39483e; font-weight: 600; }
     .stats-grid { grid-template-columns: 1fr 1fr; }
     .stat-card { min-height: 119px; }
     .detail-grid { grid-template-columns: 1fr; gap: 16px; padding: 18px; }
+    .report-transaction-details { grid-template-columns: 1fr; }
     .receipt-details { grid-template-columns: 1fr; }
 }
 @media print {
@@ -642,12 +669,19 @@ html[data-theme="dark"] .panel,
 html[data-theme="dark"] .stat-card,
 html[data-theme="dark"] .stock-dialog,
 html[data-theme="dark"] .farmer-register-dialog,
+html[data-theme="dark"] .farmer-action-card,
+html[data-theme="dark"] .farmer-registration-page,
 html[data-theme="dark"] .qr-code-box { border-color: #2e3c32; background: #19231c; color: #dce7de; box-shadow: 0 4px 16px rgb(0 0 0 / 14%); }
 html[data-theme="dark"] .panel-heading h2,
 html[data-theme="dark"] .form-section-heading h2,
 html[data-theme="dark"] .receipt-items h2,
 html[data-theme="dark"] .stock-dialog-heading h2,
 html[data-theme="dark"] .farmer-register-heading h2 { color: #e2ece4; }
+html[data-theme="dark"] .farmer-action-card:hover { border-color: #496551; }
+html[data-theme="dark"] .farmer-action-copy strong { color: #dce7de; }
+html[data-theme="dark"] .farmer-action-copy small,
+html[data-theme="dark"] .farmer-action-arrow { color: #9ba99e; }
+html[data-theme="dark"] .farmer-action-icon { background: #203c29; color: #91d6a3; }
 html[data-theme="dark"] .panel-heading p,
 html[data-theme="dark"] .form-section-heading p,
 html[data-theme="dark"] .stat-label,
@@ -743,13 +777,17 @@ html[data-theme="dark"] .rsbsa-subsection,
 html[data-theme="dark"] .import-headers,
 html[data-theme="dark"] .receipt-brand,
 html[data-theme="dark"] .receipt-details,
-html[data-theme="dark"] .receipt-remarks { border-color: #2d3b31; }
+html[data-theme="dark"] .receipt-remarks,
+html[data-theme="dark"] .report-transaction-heading,
+html[data-theme="dark"] .report-transaction-remarks { border-color: #2d3b31; }
 html[data-theme="dark"] .detail-grid strong,
 html[data-theme="dark"] .rsbsa-identity-grid strong,
 html[data-theme="dark"] .rsbsa-type-grid strong,
 html[data-theme="dark"] .farmer-confirmation strong,
 html[data-theme="dark"] .receipt-number strong,
 html[data-theme="dark"] .receipt-details strong,
+html[data-theme="dark"] .report-transaction-heading > div strong,
+html[data-theme="dark"] .report-transaction-details strong,
 html[data-theme="dark"] .qr-farmer-code,
 html[data-theme="dark"] .import-stat-grid strong { color: #dce7de; }
 html[data-theme="dark"] .detail-note p,
@@ -761,12 +799,16 @@ html[data-theme="dark"] .import-headers p,
 html[data-theme="dark"] .scanner-message,
 html[data-theme="dark"] .farmer-confirmation p,
 html[data-theme="dark"] .receipt-details small,
-html[data-theme="dark"] .receipt-remarks p { color: #a9b7ac; }
+html[data-theme="dark"] .receipt-remarks p,
+html[data-theme="dark"] .report-transaction-details small,
+html[data-theme="dark"] .report-issued-items p,
+html[data-theme="dark"] .report-transaction-remarks p { color: #a9b7ac; }
 html[data-theme="dark"] .rsbsa-hero-heading h2 { color: #e0ebe2; }
 html[data-theme="dark"] .rsbsa-photo { border-color: #35463a; background: #24362a; color: #91d6a3; }
 html[data-theme="dark"] .rsbsa-photo-placeholder { background: linear-gradient(145deg, #2a3c2d, #223328); }
 html[data-theme="dark"] .rsbsa-type-grid > div,
-html[data-theme="dark"] .import-stat-grid > div { border-color: #303e33; background: #1c271f; }
+html[data-theme="dark"] .import-stat-grid > div,
+html[data-theme="dark"] .report-distribution-card { border-color: #303e33; background: #1c271f; }
 html[data-theme="dark"] .import-stat-grid span { color: #a3b0a6; }
 html[data-theme="dark"] .import-notice { border-color: #34483a; background: #1c2a20; }
 html[data-theme="dark"] .import-notice strong,

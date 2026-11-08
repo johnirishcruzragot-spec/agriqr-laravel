@@ -122,6 +122,9 @@ class AgriQrWorkflowTest extends TestCase
 
         $this->get(route('farmers.index'))
             ->assertOk()
+            ->assertSee('farmer-action-grid', false)
+            ->assertSee('Import CSV')
+            ->assertSee('Register a farmer')
             ->assertSee('data-registration-step="1"', false)
             ->assertSee('data-registration-step="2" hidden', false)
             ->assertSee('data-registration-next', false)
@@ -134,6 +137,30 @@ class AgriQrWorkflowTest extends TestCase
             ->assertSee('data-open-on-load', false)
             ->assertSee('value="Maya"', false)
             ->assertSee('Please correct the following');
+    }
+
+    public function test_standalone_farmer_registration_is_a_two_step_card(): void
+    {
+        $user = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($user)
+            ->get(route('farmers.create'))
+            ->assertOk()
+            ->assertSee('farmer-registration-page', false)
+            ->assertSee('data-registration-wizard-container', false)
+            ->assertSee('Step 1 of 2: Personal information')
+            ->assertSee('data-registration-step="1"', false)
+            ->assertSee('data-registration-step="2" hidden', false)
+            ->assertSee('data-registration-next', false)
+            ->assertSee('data-registration-back hidden', false)
+            ->assertSee('data-registration-submit hidden', false);
+
+        $this->followingRedirects()
+            ->from(route('farmers.create'))
+            ->post(route('farmers.store'), ['first_name' => 'Maya'])
+            ->assertOk()
+            ->assertSee('data-open-step="2"', false)
+            ->assertSee('value="Maya"', false);
     }
 
     public function test_farmer_registration_reopens_on_farm_step_after_farm_validation_errors(): void

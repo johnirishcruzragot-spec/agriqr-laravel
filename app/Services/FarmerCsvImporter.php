@@ -21,6 +21,7 @@ class FarmerCsvImporter
         'DATE ENCODED',
         'REGISTRATION DATE',
         'LGU RSBSA Number',
+        'RSBSA VERIFICATION',
         'FFRS System Generated No.',
         'FARM SIZE',
         'FARM SIZE UNIT',
@@ -62,6 +63,9 @@ class FarmerCsvImporter
         'registration date' => 'registration_date',
         'date of registration' => 'registration_date',
         'lgu rsbsa number' => 'rsbsa_number',
+        'rsbsa verification' => 'verification_status',
+        'rsbsa verification status' => 'verification_status',
+        'verification status' => 'verification_status',
         'ffrs system generated no' => 'ffrs_generated_number',
         'farm size' => 'farm_size',
         'farm size ha' => 'farm_size',
@@ -204,6 +208,7 @@ class FarmerCsvImporter
                         'last_name.required' => 'LAST NAME is required.',
                         'farm_size.gt' => 'FARM SIZE must be greater than zero.',
                         'farm_size.max' => 'FARM SIZE exceeds the maximum for its unit.',
+                        'verification_status.in' => 'RSBSA VERIFICATION must be verified, unverified, or pending.',
                     ]);
 
                     if ($validator->fails()) {
@@ -292,6 +297,23 @@ class FarmerCsvImporter
                 continue;
             }
 
+            if ($field === 'verification_status') {
+                $data[$field] = Str::lower($value);
+
+                continue;
+            }
+
+            if ($field === 'farm_size_unit') {
+                $data[$field] = match (Str::lower($value)) {
+                    'hectare', 'hectares' => 'hectare',
+                    'sqm' => 'sqm',
+                    'acre', 'acres' => 'acre',
+                    default => Str::lower($value),
+                };
+
+                continue;
+            }
+
             if (in_array($field, self::BOOLEAN_FIELDS, true)) {
                 $boolean = $this->parseBoolean($value);
 
@@ -348,6 +370,7 @@ class FarmerCsvImporter
 
         return [
             'rsbsa_number' => ['required', 'string', 'max:100'],
+            'verification_status' => ['nullable', 'in:verified,unverified,pending'],
             'first_name' => ['required', 'string', 'max:100'],
             'middle_name' => ['nullable', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
@@ -406,7 +429,7 @@ class FarmerCsvImporter
             $record = $farmer->rsbsaRecord()->create([
                 ...$this->rsbsaAttributes($data),
                 'registration_status' => 'registered',
-                'verification_status' => 'unverified',
+                'verification_status' => $data['verification_status'] ?? 'unverified',
             ]);
         } else {
             $farmer = $record->farmer;
@@ -464,6 +487,7 @@ class FarmerCsvImporter
     {
         return Arr::only($data, [
             'rsbsa_number',
+            'verification_status',
             'registration_date',
             'farm_size',
             'farm_size_unit',

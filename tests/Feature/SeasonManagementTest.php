@@ -92,7 +92,7 @@ class SeasonManagementTest extends TestCase
         $this->get(route('farmers.index'))
             ->assertOk()
             ->assertSee($farmer->full_name)
-            ->assertSee('Add farmer');
+            ->assertSee('Register a farmer');
         $this->get(route('farmers.show', $farmer))
             ->assertOk()
             ->assertDontSee('Edit profile')
